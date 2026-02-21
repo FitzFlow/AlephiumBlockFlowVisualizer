@@ -29,13 +29,38 @@ function App() {
             )
             if (response.ok) {
               const data = await response.json()
+              let txCount = 0
+              let timestamp = Date.now()
+
+              try {
+                const hashResponse = await fetch(
+                  `${ALEPHIUM_API}/blockflow/hashes?fromGroup=${fromGroup}&toGroup=${toGroup}&height=${data.currentHeight}`
+                )
+                if (hashResponse.ok) {
+                  const hashData = await hashResponse.json()
+                  if (hashData.headers && hashData.headers.length > 0) {
+                    const blockHash = hashData.headers[0]
+                    const blockResponse = await fetch(
+                      `${ALEPHIUM_API}/blockflow/blocks/${blockHash}`
+                    )
+                    if (blockResponse.ok) {
+                      const blockData = await blockResponse.json()
+                      txCount = blockData.transactions?.length || 0
+                      timestamp = blockData.timestamp || Date.now()
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error(`Error fetching block details for ${fromGroup}→${toGroup}:`, err)
+              }
+
               processedData.push({
                 chainIndex,
                 fromGroup,
                 toGroup,
                 height: data.currentHeight || 0,
-                timestamp: Date.now(),
-                txCount: 0
+                timestamp,
+                txCount
               })
             } else {
               processedData.push({
@@ -139,6 +164,22 @@ function App() {
     setChainDetails(null)
   }
 
+  const totalBlocks = chainData.reduce((sum, chain) => sum + (chain.height || 0), 0)
+  const totalTxs = chainData.reduce((sum, chain) => sum + (chain.txCount || 0), 0)
+
+  const heights = chainData.map(chain => chain.height || 0)
+  const minHeight = Math.min(...heights)
+  const maxHeight = Math.max(...heights)
+  const heightRange = maxHeight - minHeight || 1
+
+  const getHeatmapColor = (height) => {
+    const ratio = (height - minHeight) / heightRange
+    const hue = 270 - (ratio * 60)
+    const saturation = 60 + (ratio * 40)
+    const lightness = 35 + (ratio * 25)
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+  }
+
   if (loading) {
     return (
       <div className="app">
@@ -169,6 +210,14 @@ function App() {
         </div>
         <p className="subtitle">Real-time visualization of 16 parallel chains</p>
         <div className="header-info">
+          <div className="stat-badge">
+            <span className="stat-label">Total blocks</span>
+            <span className="stat-value">{totalBlocks.toLocaleString()}</span>
+          </div>
+          <div className="stat-badge">
+            <span className="stat-label">Total tx</span>
+            <span className="stat-value">{totalTxs.toLocaleString()}</span>
+          </div>
           {lastUpdate && (
             <p className="last-update">
               Last update: {lastUpdate.toLocaleTimeString()}
@@ -212,32 +261,42 @@ function App() {
       )}
 
       <div className="blockflow-grid">
-        {chainData.map((chain) => (
-          <div
-            key={chain.chainIndex}
-            className="chain-card"
-            onClick={() => handleChainClick(chain)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="chain-header">
-              Chain {chain.fromGroup} → {chain.toGroup}
+        {chainData.map((chain) => {
+          const heatmapColor = getHeatmapColor(chain.height)
+          const heightRatio = (chain.height - minHeight) / heightRange
+          
+          return (
+            <div
+              key={chain.chainIndex}
+              className="chain-card"
+              onClick={() => handleChainClick(chain)}
+              style={{ 
+                cursor: 'pointer',
+                background: `linear-gradient(135deg, ${heatmapColor}15 0%, ${heatmapColor}25 100%)`,
+                borderColor: `${heatmapColor}60`,
+                boxShadow: `0 4px 20px ${heatmapColor}20`
+              }}
+            >
+              <div className="chain-header" style={{ borderBottomColor: `${heatmapColor}50` }}>
+                Chain {chain.fromGroup} → {chain.toGroup}
+              </div>
+              <div className="chain-info">
+                <div className="info-row">
+                  <span className="label">Height:</span>
+                  <span className="value">{chain.height.toLocaleString()}</span>
+                </div>
+                <div className="info-row">
+                  <span className="label">Time:</span>
+                  <span className="value">{formatTimestamp(chain.timestamp)}</span>
+                </div>
+                <div className="info-row">
+                  <span className="label">Tx:</span>
+                  <span className="value">{chain.txCount}</span>
+                </div>
+              </div>
             </div>
-            <div className="chain-info">
-              <div className="info-row">
-                <span className="label">Height:</span>
-                <span className="value">{chain.height.toLocaleString()}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Time:</span>
-                <span className="value">{formatTimestamp(chain.timestamp)}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Tx:</span>
-                <span className="value">{chain.txCount}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <footer>
@@ -288,38 +347,74 @@ function App() {
                   </div>
 
                   {chainDetails.blockDetails && (
-                    <div className="detail-section">
-                      <h3>Mining Difficulty</h3>
-                      <div className="detail-row">
-                        <span className="detail-label">Target:</span>
-                        <span className="detail-value difficulty-value">
-                          {chainDetails.blockDetails.target}
-                        </span>
+                    <>
+                      <div className="detail-section">
+                        <h3>Mining Difficulty</h3>
+                        <div className="detail-row">
+                          <span className="detail-label">Target:</span>
+                          <span className="detail-value difficulty-value">
+                            {chainDetails.blockDetails.target}
+                          </span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Block Hash:</span>
+                          <span className="detail-value hash-value">
+                            {chainDetails.blockDetails.hash.substring(0, 16)}...
+                          </span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Timestamp:</span>
+                          <span className="detail-value">
+                            {new Date(chainDetails.blockDetails.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Transactions:</span>
+                          <span className="detail-value">
+                            {chainDetails.blockDetails.transactions?.length || 0}
+                          </span>
+                        </div>
+                        <div className="difficulty-info">
+                          <small>
+                            💡 The target value represents mining difficulty. Lower values = harder to mine = more miners on the network.
+                          </small>
+                        </div>
                       </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Block Hash:</span>
-                        <span className="detail-value hash-value">
-                          {chainDetails.blockDetails.hash.substring(0, 16)}...
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Timestamp:</span>
-                        <span className="detail-value">
-                          {new Date(chainDetails.blockDetails.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Transactions:</span>
-                        <span className="detail-value">
-                          {chainDetails.blockDetails.transactions?.length || 0}
-                        </span>
-                      </div>
-                      <div className="difficulty-info">
-                        <small>
-                          💡 The target value represents mining difficulty. Lower values = harder to mine = more miners on the network.
-                        </small>
-                      </div>
-                    </div>
+
+                      {chainDetails.blockDetails.transactions && chainDetails.blockDetails.transactions.length > 0 && (
+                        <div className="detail-section">
+                          <h3>Latest Transactions (Last Block)</h3>
+                          <div className="transactions-list">
+                            {chainDetails.blockDetails.transactions.slice(0, 5).map((tx, idx) => (
+                              <div key={idx} className="transaction-item">
+                                <div className="tx-header">
+                                  <span className="tx-label">TX #{idx + 1}</span>
+                                  <span className="tx-timestamp">
+                                    {new Date(chainDetails.blockDetails.timestamp).toLocaleTimeString()}
+                                  </span>
+                                </div>
+                                <div className="tx-row">
+                                  <span className="tx-detail-label">Hash:</span>
+                                  <span className="hash-value">
+                                    {tx.unsigned?.txId ? 
+                                      `${tx.unsigned.txId.substring(0, 12)}...${tx.unsigned.txId.substring(tx.unsigned.txId.length - 8)}` 
+                                      : 'N/A'}
+                                  </span>
+                                </div>
+                                {tx.unsigned?.fixedOutputs && tx.unsigned.fixedOutputs.length > 0 && (
+                                  <div className="tx-row">
+                                    <span className="tx-detail-label">Amount:</span>
+                                    <span className="tx-amount">
+                                      {(parseInt(tx.unsigned.fixedOutputs[0].attoAlphAmount) / 1e18).toFixed(4)} ALPH
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               ) : (

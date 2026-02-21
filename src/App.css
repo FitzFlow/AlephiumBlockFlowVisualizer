@@ -48,6 +48,31 @@ header {
   flex-wrap: wrap;
 }
 
+.stat-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(123, 92, 255, 0.12);
+  border: 1px solid rgba(123, 92, 255, 0.35);
+  box-shadow: 0 6px 16px rgba(123, 92, 255, 0.15);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #b7c0d1;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ff4d6d;
+}
+
 h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
@@ -420,6 +445,67 @@ footer {
   color: #cbd5e0;
   line-height: 1.5;
   font-size: 0.85rem;
+}
+
+/* Transactions list */
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.transaction-item {
+  background: rgba(123, 92, 255, 0.08);
+  border: 1px solid rgba(123, 92, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.transaction-item:hover {
+  background: rgba(123, 92, 255, 0.15);
+  border-color: rgba(123, 92, 255, 0.4);
+  transform: translateX(5px);
+}
+
+.tx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tx-label {
+  color: #ff4d6d;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tx-timestamp {
+  color: #b7c0d1;
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+}
+
+.tx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.tx-detail-label {
+  color: #b7c0d1;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.tx-amount {
+  color: #ffb703;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 /* Modal responsive */
