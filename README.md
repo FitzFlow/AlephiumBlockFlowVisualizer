@@ -2,16 +2,22 @@
 
 Real-time visualization of Alephium's unique 16-chain parallel architecture (4 groups × 4 chains).
 
-## 📖 What is this?
+## What is this?
 
 This project visualizes Alephium's BlockFlow algorithm, showing all 16 chains producing blocks in parallel. Each chain is represented by a card displaying:
-- Block height
+- Block height (total blocks mined)
 - Timestamp of the last block
-- Number of transactions
+- Number of transactions in the last block
+- Visual heatmap (color intensity based on chain activity)
+
+Click any chain to see detailed information including:
+- Mining difficulty
+- Block hash and timestamp
+- Last block transactions with hash and amount
 
 Data is fetched from the Alephium mainnet API and refreshes every 15 seconds.
 
-## 🚀 How to run
+## How to run
 
 ### Prerequisites
 - Node.js 18+ installed
@@ -43,24 +49,30 @@ npm run build
 npm run preview
 ```
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 - **React** - UI framework
 - **Vite** - Build tool
 - **Alephium Node API** - Blockchain data source
 
-## 📊 Features
+## Features
 
 - ✅ Real-time display of all 16 chains in a 4×4 grid
 - ✅ Live data from Alephium mainnet
-- ✅ Auto-refresh every 15 seconds
+- ✅ Auto-refresh every 15 seconds with countdown indicator
+- ✅ Interactive chain details modal
+- ✅ Mining difficulty display
+- ✅ Transaction list with hash and amount
+- ✅ Visual heatmap based on block height
+- ✅ Total blocks and transactions metrics
+- ✅ Skeleton loading states
 - ✅ Responsive design (desktop, tablet, mobile)
-- ✅ Clean and modern UI
+- ✅ Alephium brand theme
 
-## 🎯 Hackathon Track
+## Hackathon Track
 
 This project is submitted for the **BlockFlow Visualization / UI + Data Challenge** track of the Hackin'Dau x Alephium hackathon.
 
-## 📝 License
+## License
 
 MIT
